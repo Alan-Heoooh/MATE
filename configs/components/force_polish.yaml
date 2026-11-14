@@ -1,0 +1,128 @@
+data:
+  lowdim_file: "${MATE_LOWDIM_FILE:-lowdim_updated.h5}"
+  calib_path: "${MATE_DATA_CALIB:-}"
+  calibration_file: "${MATE_CALIB_FILE:-result.json}"
+  hdf5_keys:
+    timestamp: "${MATE_TIMESTAMP_KEY:-timestamp}"
+    tcp_pose: "${MATE_TCP_POSE_KEY:-tcp_pose}"
+    ee_command: "${MATE_EE_COMMAND_KEY:-ee_command}"
+    force_torque: "${MATE_FORCE_TORQUE_KEY:-force_torque}"
+
+  # force torque
+  num_obs_ft: &ft_horizon 100
+  obs_ft_freq: 100
+
+  # proprioception
+  num_obs_proprio: &proprio_horizon 10
+  obs_proprio_freq: 100
+
+  # action
+  action_horizon_future: 50
+  action_dim: 10
+  action_freq: 50
+  relative_action: true
+  relative_proprio_obs_for_relative_action: true
+  action_type: command # command, state
+
+  # coordinate frame
+  obs_coord: camera # camera, base
+  action_coord: camera # camera, base
+  action_rotation_repr: rotation_col_6d # required for MATE diffusion-variable rebasing
+  force_torque_coord: tcp # tcp, None
+
+  # robot
+  cam_id: "${MATE_DATA_CAMERA_ID:-camera}"
+  stiffness: [10000.0, 10000.0, 10000.0]
+
+  normalization:
+    # for camera coordinate
+    # trans_min: [-0.8, -0.8, 0]
+    # trans_max: [0.8, 0.8, 1.3]
+    # for relative action and proprio observation
+    # Default values (kept for backward compatibility)
+    trans_min: [-0.2, -0.2, -0.2]
+    trans_max: [0.2, 0.2, 0.2]
+    
+    # Separate normalization for obs_proprio (relative proprioception)
+    obs_proprio_trans_min: [-0.04, -0.04, -0.04]
+    obs_proprio_trans_max: [0.04, 0.04, 0.04]
+    
+    # Separate normalization for action (relative action)
+    action_trans_min: [-0.2, -0.2, -0.2]
+    action_trans_max: [0.2, 0.2, 0.2]
+    
+    max_gripper_width: 0.11
+
+    force_min: [-10.0, -10.0, -20.0]
+    force_max: [10.0, 10.0, 20.0]
+    torque_min: [-1.0, -1.0, -1.0]
+    torque_max: [1.0, 1.0, 1.0]
+
+train:
+  augmentation:
+    ft_sample: true
+
+  lr: 0.0003
+  batch_size: 256
+  num_epochs: 100
+  save_epochs: 10
+  num_workers: 24
+  num_warmup_steps: 2000
+  seed: 233
+
+deploy:
+  agent:
+    ready_pose: "${MATE_READY_POSE:-}"
+    ready_pose_joints: "${MATE_READY_JOINTS:-}"
+    camera_intrinsics: "${MATE_CAMERA_INTRINSICS:-}"
+    camera_resolution: [1280, 720]
+    camera_frame_rate: 30
+    initialize_gripper: false
+    robot_interface_module: "${MATE_ROBOT_INTERFACE_MODULE:-flexiv_robot_interface.flexiv_rizon_interface}"
+    robot_serial: "${MATE_ROBOT_SERIAL:-}"
+    camera_serial: "${MATE_CAMERA_SERIAL:-}"
+    enable_lowdim_provider: true
+    lowdim_sample_hz: 100.0
+    lowdim_buffer_secs: 60.0
+
+  infer_freq: 25 # Hz
+  action_discard_steps: 3 # steps
+  gripper_threshold: 0.02
+  ensemble_mode: new
+  max_past_inference_chunks: 5
+  seed: 233
+
+model:
+  type: force_proprio
+
+  ft_feature_dim: &ft_feature_dim 16
+  proprio_feature_dim: &proprio_feature_dim 0
+  obs_feature_dim: 16
+
+  ft_encoder: 
+    type: mlp_flatten
+    input_dim: 6
+    horizon: *ft_horizon
+    hidden_dim: 256
+    output_dim: *ft_feature_dim
+    dropout: 0.1
+
+  proprio_encoder: 
+    type: mlp_flatten
+    input_dim: 9
+    horizon: *proprio_horizon
+    hidden_dim: 32
+    output_dim: *proprio_feature_dim
+    dropout: 0.1
+
+  fusion_type: feature_concat
+  # Dropout probability applied to the fused feature.
+  fusion_dropout: 0.0
+
+  action_decoder:
+    type: diffusion_unet
+    num_inference_steps: 10
+    diffusion_step_embed_dim: 32
+    down_dims: [32,64]
+    kernel_size: 5
+    n_groups: 8

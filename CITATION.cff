@@ -1,0 +1,32 @@
+cff-version: 1.2.0
+message: "Please cite the MATE paper when using this code."
+title: "MATE: Asynchronous Multi-Rate Diffusion Policy Composition"
+type: software
+authors:
+  - family-names: He
+    given-names: Zihao
+  - family-names: Fang
+    given-names: Hongjie
+  - family-names: Tang
+    given-names: Shirun
+  - family-names: Lu
+    given-names: Cewu
+  - family-names: Fang
+    given-names: Haoshu
+preferred-citation:
+  type: article
+  title: "MATE: Asynchronous Multi-Rate Diffusion Policy Composition"
+  authors:
+    - family-names: He
+      given-names: Zihao
+    - family-names: Fang
+      given-names: Hongjie
+    - family-names: Tang
+      given-names: Shirun
+    - family-names: Lu
+      given-names: Cewu
+    - family-names: Fang
+      given-names: Haoshu
+  year: 2026
+  journal: arXiv
+  doi: 10.48550/arXiv.2607.17257

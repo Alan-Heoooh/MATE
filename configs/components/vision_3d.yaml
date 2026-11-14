@@ -1,0 +1,131 @@
+data:
+  lowdim_file: "${MATE_LOWDIM_FILE:-lowdim_updated.h5}"
+  calib_path: "${MATE_DATA_CALIB:-}"
+  calibration_file: "${MATE_CALIB_FILE:-result.json}"
+  hdf5_keys:
+    timestamp: "${MATE_TIMESTAMP_KEY:-timestamp}"
+    tcp_pose: "${MATE_TCP_POSE_KEY:-tcp_pose}"
+    ee_command: "${MATE_EE_COMMAND_KEY:-ee_command}"
+    force_torque: "${MATE_FORCE_TORQUE_KEY:-force_torque}"
+  num_obs: 1
+  num_obs_ft: 100
+  obs_ft_freq: 100
+  num_obs_proprio: 10
+  obs_proprio_freq: 100
+  num_action: 100
+  action_dim: 10
+  action_freq: 50
+  relative_action: true
+  relative_proprio_obs_for_relative_action: true
+  obs_coord: camera # camera, base
+  action_coord: camera # camera, base
+  action_rotation_repr: rotation_col_6d # rotation_6d (row-based), rotation_col_6d (column-based)
+  force_torque_coord: tcp
+  action_type: command
+  voxel_size: 0.005
+
+  cam_id: "${MATE_DATA_CAMERA_ID:-camera}"
+  stiffness: [10000.0, 10000.0, 10000.0]
+
+  normalization:
+    # for camera coordinate
+    trans_min: [-0.7, -0.7, 0]
+    trans_max: [0.7, 0.7, 1.3]
+
+    # Separate normalization for obs_proprio (relative proprioception)
+    obs_proprio_trans_min: [-0.04, -0.04, -0.04]
+    obs_proprio_trans_max: [0.04, 0.04, 0.04]
+    
+    # Separate normalization for action (relative action)
+    action_trans_min: [-0.2, -0.2, -0.2]
+    action_trans_max: [0.2, 0.2, 0.2]
+
+    max_gripper_width: 0.11
+    force_min: [-10.0, -10.0, -20.0]
+    force_max: [10.0, 10.0, 20.0]
+    torque_min: [-1.0, -1.0, -1.0]
+    torque_max: [1.0, 1.0, 1.0]
+    img_mean: [0.485, 0.456, 0.406]
+    img_std: [0.229, 0.224, 0.225]
+
+  with_cloud: false
+  vis: false # true
+
+train:
+  workspace: 
+    min: [-0.6, -0.6, 0]
+    max: [0.6, 0.6, 1.2]
+
+  augmentation:
+    point: true
+    aug_trans_min: [-0.2, -0.2, -0.2]
+    aug_trans_max: [0.2, 0.2, 0.2]
+    aug_rot_min: [-30, -30, -30]
+    aug_rot_max: [30, 30, 30]
+    
+    color: true
+    aug_color_params: [0.4, 0.4, 0.2, 0.1]
+    aug_color_prob: 0.2
+
+    ft_sample: false # true
+  
+  ft_temporal_smoothing: false
+  ft_temporal_smoothing_window: 50
+
+  lr: 0.0003
+  batch_size: 240
+  num_epochs: 1000
+  save_epochs: 50
+  num_workers: 24
+  num_warmup_steps: 2000
+  seed: 233
+
+deploy:
+  workspace:
+    min: [-0.6, -0.6, 0]
+    max: [0.6, 0.6, 1.2]
+  safe_workspace:
+    min: [0.2, -0.4, -0.4]
+    max: [0.8, 0.4, 0.4]
+    safe_eps: 0.002
+
+  agent:
+    ready_pose: "${MATE_READY_POSE:-}"
+    ready_pose_joints: "${MATE_READY_JOINTS:-}"
+    camera_intrinsics: "${MATE_CAMERA_INTRINSICS:-}"
+    camera_resolution: [1280, 720]
+    camera_frame_rate: 30
+    initialize_gripper: false
+    robot_interface_module: "${MATE_ROBOT_INTERFACE_MODULE:-flexiv_robot_interface.flexiv_rizon_interface}"
+    robot_serial: "${MATE_ROBOT_SERIAL:-}"
+    camera_serial: "${MATE_CAMERA_SERIAL:-}"
+    enable_lowdim_provider: true
+    lowdim_sample_hz: 100.0
+    lowdim_buffer_secs: 60.0
+
+  vision_freq: 5.0
+  gripper_threshold: 0.02
+  ensemble_mode: new
+  seed: 233
+
+  vis: false
+
+model:
+  type: rise
+  hidden_dim: 512
+  nheads: 8
+  num_encoder_layers: 4
+  num_decoder_layers: 1
+  dim_feedforward: 2048
+  dropout: 0.1
+
+  input_dim: 6
+  obs_feature_dim: 512
+
+  action_decoder:
+    type: diffusion_unet
+    num_inference_steps: 20
+    diffusion_step_embed_dim: 256
+    down_dims: [256, 512]
+    kernel_size: 5
+    n_groups: 8

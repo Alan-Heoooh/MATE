@@ -1,0 +1,32 @@
+# Copy to configs/local.yaml (ignored by Git). Never put real devices in this file.
+# Environment variables take precedence. Paths are relative to the repository root.
+variables:
+  MATE_DATA_ROOT: data
+  MATE_CHECKPOINT_ROOT: checkpoints
+  MATE_CALIB: calib
+  # Optional task-specific paths override DATA_ROOT/<task>:
+  # MATE_FLIP_DATA_PATH: /path/to/flip
+  # MATE_POLISH_DATA_PATH: /path/to/polish
+  # MATE_PNP_DATA_PATH: /path/to/pnp
+
+  # IDs used in recorded dataset directories; independent of live hardware IDs.
+  MATE_DATA_CAMERA_ID: camera
+  MATE_DATA_WRIST_CAMERA_ID: wrist_camera
+  MATE_LOWDIM_FILE: lowdim_updated.h5
+  MATE_TCP_POSE_KEY: tcp_pose
+  MATE_EE_COMMAND_KEY: ee_command
+  MATE_FORCE_TORQUE_KEY: force_torque
+  MATE_TIMESTAMP_KEY: timestamp
+  # MATE_DATA_CALIB: /path/to/dataset/calib
+  MATE_CALIB_FILE: result.json
+
+  # Keep serials quoted so leading zeros are preserved.
+  MATE_ROBOT_SERIAL: ""
+  MATE_CAMERA_SERIAL: ""
+  MATE_WRIST_CAMERA_SERIAL: ""
+  # Supply task-specific measured values before deploying; no generic safe pose exists.
+  MATE_READY_POSE: null       # [x_m, y_m, z_m, qw, qx, qy, qz] in robot base frame
+  MATE_READY_JOINTS: null     # seven joint angles, radians
+  MATE_CAMERA_INTRINSICS: null  # optional 3x3 matrix; otherwise query RealSense
+  # Site adapter module providing zero_ft_sensor(robot), move_l_pose(robot, pose, is_blocking).
+  MATE_ROBOT_INTERFACE_MODULE: flexiv_robot_interface.flexiv_rizon_interface

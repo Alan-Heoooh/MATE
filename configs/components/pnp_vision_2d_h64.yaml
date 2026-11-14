@@ -1,0 +1,98 @@
+# 2D vision policy for PnP (cam_<dataset-id>), action horizon 64.
+# num_action must be divisible by 4 for ConditionalUnet1D with
+# down_dims=[256,512,1024] (2x stride-2); 50 causes skip-connection
+# size mismatch (26 vs 25).
+# Action translation/gripper normalization must match pnp_vision_3d.yaml.
+data:
+  lowdim_file: "${MATE_LOWDIM_FILE:-lowdim_updated.h5}"
+  calib_path: "${MATE_DATA_CALIB:-}"
+  calibration_file: "${MATE_CALIB_FILE:-result.json}"
+  hdf5_keys:
+    timestamp: "${MATE_TIMESTAMP_KEY:-timestamp}"
+    tcp_pose: "${MATE_TCP_POSE_KEY:-tcp_pose}"
+    ee_command: "${MATE_EE_COMMAND_KEY:-ee_command}"
+    force_torque: "${MATE_FORCE_TORQUE_KEY:-force_torque}"
+  num_obs: 1
+  num_obs_proprio: 10
+  obs_proprio_freq: 100
+  num_action: 64
+  action_dim: 10
+  action_freq: 50
+
+  relative_action: true
+  relative_proprio_obs_for_relative_action: true
+  # In-hand camera is rigidly attached to tcp; no extrinsic calibration needed.
+  inhand_camera: true
+  obs_coord: tcp
+  action_coord: tcp
+  # Required by MATE: the two 3D column blocks transform linearly and
+  # orthogonally when delayed diffusion variables are rebased.
+  action_rotation_repr: rotation_col_6d
+
+  cam_id: "${MATE_DATA_WRIST_CAMERA_ID:-wrist_camera}"
+
+  img_size: &image_size [720, 1280]
+  crop_ratio: 0.9
+
+  normalization:
+    trans_min: [-0.7, -0.7, 0.0]
+    trans_max: [0.7, 0.7, 1.3]
+    obs_proprio_trans_min: [-0.04, -0.04, -0.04]
+    obs_proprio_trans_max: [0.04, 0.04, 0.04]
+    action_trans_min: [-0.2, -0.2, -0.2]
+    action_trans_max: [0.2, 0.2, 0.2]
+    max_gripper_width: 0.11
+    img_mean: [0.485, 0.456, 0.406]
+    img_std: [0.229, 0.224, 0.225]
+
+  vis: false
+
+train:
+  lr: 0.0003
+  # Global batch size, split evenly across distributed workers.
+  batch_size: 128
+  num_epochs: 1000
+  save_epochs: 50
+  num_workers: 8
+  num_warmup_steps: 2000
+  seed: 233
+
+model:
+  type: rise_ft_proprio_2d
+
+  obs_feature_dims:
+    vision_feature_dim: &vision_feature_dim 512
+    ft_feature_dim: 0
+    proprio_feature_dim: 0
+
+  encoders:
+    vision_encoder:
+      type: resnet18
+      input_hw: *image_size
+      output_dim: *vision_feature_dim
+
+  fusion_type: feature_concat
+  fusion_dropout: 0.0
+
+  action_decoder:
+    type: diffusion_unet
+    num_inference_steps: 20
+    diffusion_step_embed_dim: 128
+    down_dims: [256, 512, 1024]
+    kernel_size: 5
+    n_groups: 8
+
+deploy:
+  agent:
+    ready_pose: "${MATE_READY_POSE:-}"
+    ready_pose_joints: "${MATE_READY_JOINTS:-}"
+    robot_serial: "${MATE_ROBOT_SERIAL:-}"
+    camera_serial: "${MATE_WRIST_CAMERA_SERIAL:-}"
+
+  max_steps: 1000
+  # MATE fast branch frequency and paper-style 10-step DDIM sampler.
+  infer_freq: 5.0
+  action_discard_steps: 0
+  num_inference_steps: 10
+  gripper_threshold: 0.02
+  ensemble_mode: new
