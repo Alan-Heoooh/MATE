@@ -1,6 +1,13 @@
 # Installation
 
-Run commands from the repository root. Use the source trees included under `dependencies/` for native builds.
+Clone the [MATE repository](https://github.com/Alan-Heoooh/MATE) and enter the repository root:
+
+```bash
+git clone https://github.com/Alan-Heoooh/MATE.git
+cd MATE
+```
+
+Run the remaining commands from this directory. Use the source trees included under `dependencies/` for native builds.
 
 ## Reference environment
 

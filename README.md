@@ -1,6 +1,6 @@
 # MATE: Asynchronous Multi-Rate Diffusion Policy Composition
 
-[[Paper]](https://arxiv.org/abs/2607.17257) [[Project Page]](https://lag-fusion.github.io/)
+[[Paper]](https://arxiv.org/abs/2607.17257) [[Project Page]](https://lag-fusion.github.io/) [[Code]](https://github.com/Alan-Heoooh/MATE)
 
 **Authors:** [Zihao He](https://alan-heoooh.github.io/)<sup>*</sup>, [Hongjie Fang](https://tonyfang.net/)<sup>*</sup>, [Shirun Tang](https://www.linkedin.com/in/shiruntang/), [Cewu Lu](https://www.mvig.org/)<sup>†</sup>, [Hao-Shu Fang](https://fang-haoshu.github.io/)<sup>†</sup>
 
@@ -17,6 +17,13 @@ The repository provides component training and two asynchronous composition pipe
 - **3D–2D vision:** [global point clouds and wrist RGB](eval_mate_3d_2d.py), with launcher defaults of 2 Hz and 5 Hz and equal composition weights.
 
 ## Setup
+
+Clone the [MATE repository](https://github.com/Alan-Heoooh/MATE) and enter the repository root:
+
+```bash
+git clone https://github.com/Alan-Heoooh/MATE.git
+cd MATE
+```
 
 Follow [INSTALL.md](assets/docs/INSTALL.md) for the Python/CUDA environment, bundled native extensions, and deployment SDKs. Data, checkpoints, measured calibration, and the site robot adapter are supplied separately.
 
